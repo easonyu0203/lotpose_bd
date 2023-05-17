@@ -2,7 +2,7 @@ import multiprocessing as mp
 
 import cv2
 
-from models.frameDto import FrameDto
+from lotpose.models.frameDto import FrameDto
 
 
 class WebcamController:

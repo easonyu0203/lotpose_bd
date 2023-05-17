@@ -1,8 +1,8 @@
 from typing import List
 
-from frame_collector import FrameCollector
+from lotpose.frame_collector import FrameCollector
+from lotpose.webcam_controller import WebcamController
 from utils import cv_utils
-from webcam_controller import WebcamController
 
 
 class WebcamManager:

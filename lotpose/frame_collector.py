@@ -1,8 +1,7 @@
 import time
-from datetime import datetime
 from typing import Protocol, List
 
-from models.frameDto import FrameDto
+from lotpose.models.frameDto import FrameDto
 
 
 class FrameSource(Protocol):

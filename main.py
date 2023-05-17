@@ -1,8 +1,27 @@
-import cv2
+from typing import List
 
-from frame_collector import FrameCollector
+import cv2
+import uvicorn as uvicorn
+from fastapi import FastAPI
+
+from lotpose.frame_collector import FrameCollector
 from utils import cv_utils
-from webcam_manager import WebcamManager
+from lotpose.webcam_manager import WebcamManager
+from utils.cv_utils import WebcamDeviceInfo
+
+app = FastAPI(
+    arbitrary_types_allowed=True
+)
+
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+
+@app.get("/list-webcams", response_model=List[WebcamDeviceInfo])
+async def list_webcams():
+    return cv_utils.list_webcams()
 
 
 def main():
@@ -21,7 +40,7 @@ def main():
     while True:
         frames = webcam_manager.get_frames()
 
-        cv2.imshow('Video Stream', frames[0].value)
+        # cv2.imshow('Video Stream', frames[0].value)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
