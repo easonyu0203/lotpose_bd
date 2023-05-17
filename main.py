@@ -14,6 +14,7 @@ def main():
     frame_collector = FrameCollector(tolerant_interval=frame_collector_tolerant_interval)
     webcam_manager = WebcamManager(device_indices, frame_collector)
 
+    # start webcams
     webcam_manager.start_all()
 
     # main loop
@@ -25,6 +26,7 @@ def main():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+    # stop webcams
     webcam_manager.stop_all()
 
     # Close the display window
