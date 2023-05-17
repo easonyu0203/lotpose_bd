@@ -9,10 +9,12 @@ class WebcamManager:
     _webcam_controllers: List[WebcamController]
     _frame_collector: FrameCollector
 
-    def __init__(self, device_indices: List[int], frame_collector: FrameCollector):
+    def __init__(self, device_indices: List[int], frame_collector: FrameCollector,
+                 request_width: int,
+                 request_height: int):
 
         # make controllers
-        self._webcam_controllers = [WebcamController(idx) for idx in device_indices]
+        self._webcam_controllers = [WebcamController(idx, request_width, request_height) for idx in device_indices]
 
         self._frame_collector = frame_collector
 
