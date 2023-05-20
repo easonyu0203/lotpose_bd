@@ -1,8 +1,8 @@
 from typing import List
 
 from lotpose.frame_collector import FrameCollector
+from lotpose.models.frameDto import FrameDto
 from lotpose.webcam_controller import WebcamController
-from utils import cv_utils
 
 
 class WebcamManager:
@@ -28,6 +28,6 @@ class WebcamManager:
         for webcam_ctr in self._webcam_controllers:
             webcam_ctr.stop()
 
-    def get_frames(self):
+    def get_frames(self) -> List[FrameDto]:
         """get batch of frames from each source"""
         return self._frame_collector.get_frames(self._webcam_controllers)
