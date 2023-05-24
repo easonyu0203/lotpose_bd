@@ -64,15 +64,15 @@ async def get_stream(device_index: int):
                 break
 
             # Read the next frame from the video capture
-            frames = AppManager.Singleton.get_webcams_frames()
+            mono_results = AppManager.Singleton.get_mono_results()
             try:
-                frame = frames[device_index]
+                annotated_img = mono_results[device_index].annotated_img
             except KeyError:
                 await asyncio.sleep(0.016)
                 continue
 
             # Convert the frame to JPEG format
-            _, jpeg = cv2.imencode('.jpg', frame.value)
+            _, jpeg = cv2.imencode('.jpg', annotated_img)
             frame_bytes = jpeg.tobytes()
 
             yield (b'--frame\r\n'

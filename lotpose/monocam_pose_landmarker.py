@@ -51,7 +51,8 @@ class MonoCamPoseLandmarker:
         :rtype: pose landmarks in shape (33, 3)
         """
         self._current_mono_results = dict()
-        mp_images = {device_idx: (mp.Image(image_format=mp.ImageFormat.SRGB, data=frame.value), frame.timestamp) for
+        mp_images = {device_idx: (mp.Image(image_format=mp.ImageFormat.SRGB,
+                                           data=cv2.cvtColor(frame.value, cv2.COLOR_BGR2RGB)), frame.timestamp) for
                      device_idx, frame in frames.items()}
 
         # process images
@@ -62,7 +63,7 @@ class MonoCamPoseLandmarker:
         # wait for results
         while True:
             if len(self._current_mono_results) != len(self._landmarkers):
-                await asyncio.sleep(0.01)
+                await asyncio.sleep(0.001)
                 continue
 
             return self._current_mono_results

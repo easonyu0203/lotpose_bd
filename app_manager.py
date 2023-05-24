@@ -101,12 +101,13 @@ class AppManager(IAppManager):
                     f.timestamp for f in old_frames.values()):
                 await asyncio.sleep(0.001)
                 continue
-
             old_frames = frames
-            # mono_results = await self.mono_landmarker.process_async(frames)
+
+            # mono camera pose estimation pass
+            mono_results = await self.mono_landmarker.process_async(frames)
 
             self._app_state.current_frames = frames
-            # self.app_state.current_mono_results = mono_results
+            self._app_state.current_mono_results = mono_results
 
             await asyncio.sleep(0.016)  # run 60 fps
 
