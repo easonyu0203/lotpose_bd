@@ -2,7 +2,7 @@ from typing import Tuple
 
 import cv2
 
-from lotpose.models.frameDto import FrameDto
+from lotpose.dtos.frame_dto import FrameDto
 
 
 class WebcamController:

@@ -1,7 +1,7 @@
 import time
 from typing import Protocol, List
 
-from lotpose.models.frameDto import FrameDto
+from lotpose.dtos.frame_dto import FrameDto
 
 
 class FrameSource(Protocol):
@@ -21,7 +21,7 @@ class FrameCollector:
     timeout: int
     frame_rate: int
     _obsolete_threshold_time: float
-    _current_frames: List[FrameDto]
+    _current_frames: dict[int, FrameDto]
 
     def __init__(self, tolerant_interval=30, timeout=2, frame_rate=60):
         """
@@ -33,9 +33,9 @@ class FrameCollector:
         self.timeout = timeout
         self.frame_rate = frame_rate
         self._obsolete_threshold_time = 0
-        self._current_frames = []
+        self._current_frames = dict()
 
-    def get_frames(self, frame_sources: List[FrameSource]) -> List[FrameDto]:
+    def get_frames(self, frame_sources: dict[int, FrameSource]) -> dict[int, FrameDto]:
         """
         Fetches a batch of frames from each of the frame sources.
 
@@ -51,7 +51,7 @@ class FrameCollector:
         if time.time() < self._obsolete_threshold_time:
             return self._current_frames
 
-        frames = [frame_src.get_frame() for frame_src in frame_sources]
+        frames = {device_idx: frame_src.get_frame() for device_idx, frame_src in frame_sources.items()}
 
         if len(frames) == 1:
             self._obsolete_threshold_time = time.time() + 1 / self.frame_rate
@@ -60,12 +60,13 @@ class FrameCollector:
 
         start_time = time.time()  # Record the starting time
 
+        frames_sorted = list(frames.values())
         while True:
             # sort device frames by timestamp
-            frames.sort(key=lambda frame: frame.timestamp)
+            frames_sorted.sort(key=lambda f: f.timestamp)
 
             # check is in tolerant interval
-            time_diff = (frames[-1].timestamp - frames[0].timestamp).total_seconds() * 1000
+            time_diff = (frames_sorted[-1].timestamp - frames_sorted[0].timestamp) * 1000
 
             if time_diff <= self.tolerant_interval:
                 self._obsolete_threshold_time = time.time() + 1 / self.frame_rate
@@ -78,4 +79,4 @@ class FrameCollector:
 
             # renew the oldest frame
             oldest_frame = frames.pop(0)
-            frames.append(frame_sources[oldest_frame.device_index].get_frame())
+            frames_sorted.append(frame_sources[oldest_frame.device_index].get_frame())

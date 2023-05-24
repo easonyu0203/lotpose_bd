@@ -1,12 +1,12 @@
 from typing import List
 
 from lotpose.frame_collector import FrameCollector
-from lotpose.models.frameDto import FrameDto
+from lotpose.dtos.frame_dto import FrameDto
 from lotpose.webcam_controller import WebcamController
 
 
 class WebcamManager:
-    _webcam_controllers: List[WebcamController]
+    _webcam_controllers: dict[int, WebcamController]
     _frame_collector: FrameCollector
 
     def __init__(self, device_indices: List[int], frame_collector: FrameCollector,
@@ -14,20 +14,20 @@ class WebcamManager:
                  request_height: int):
 
         # make controllers
-        self._webcam_controllers = [WebcamController(idx, request_width, request_height) for idx in device_indices]
+        self._webcam_controllers = {idx: WebcamController(idx, request_width, request_height) for idx in device_indices}
 
         self._frame_collector = frame_collector
 
     def start_all(self):
         """start all webcams"""
-        for webcam_ctr in self._webcam_controllers:
+        for webcam_ctr in self._webcam_controllers.values():
             webcam_ctr.start()
 
     def stop_all(self):
         """stop all webcams"""
-        for webcam_ctr in self._webcam_controllers:
+        for webcam_ctr in self._webcam_controllers.values():
             webcam_ctr.stop()
 
-    def get_frames(self) -> List[FrameDto]:
+    def get_frames(self) -> dict[int, FrameDto]:
         """get batch of frames from each source"""
         return self._frame_collector.get_frames(self._webcam_controllers)
