@@ -1,6 +1,7 @@
-from typing import Tuple
+from typing import Tuple, Optional
 
 import cv2
+import numpy as np
 
 from lotpose.dtos.frame_dto import FrameDto
 
@@ -10,6 +11,8 @@ class WebcamController:
     device_index: int
     width: int
     height: int
+    mtx: Optional[np.array]
+    dist: Optional[np.array]
 
     def __init__(self, device_index: int, request_width: int, request_height: int):
         """

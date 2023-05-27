@@ -40,11 +40,20 @@ async def list_webcams():
 @app.post("/start-webcams", response_model=MsgResponse)
 async def start_webcams(device_indices: List[int], background_tasks: BackgroundTasks):
     # start app
-    AppManager.Singleton.start_webcams_n_pipeline(device_indices)
+    AppManager.Singleton.start_webcams(device_indices)
 
     background_tasks.add_task(AppManager.Singleton.start_pipeline_bg_task)
 
     return MsgResponse(msg="Webcams started")
+
+
+@app.post("/calibrate-camera", response_model=MsgResponse)
+async def calibrate_camera(background_tasks: BackgroundTasks):
+    assert AppManager.Singleton.get_app_state_dto().webcam_stared, "Webcams not started"
+
+    background_tasks.add_task(AppManager.Singleton.start_calibration_bg_task)
+
+    return MsgResponse(msg="Calibration started")
 
 
 @app.post("/stop-webcams", response_model=MsgResponse)
@@ -64,6 +73,7 @@ async def get_stream(device_index: int):
                 break
 
             # Read the next frame from the video capture
+            frames = AppManager.Singleton.get_webcams_frames()[device_index].value
             mono_results = AppManager.Singleton.get_mono_results()
             try:
                 annotated_img = mono_results[device_index].annotated_img
@@ -72,7 +82,7 @@ async def get_stream(device_index: int):
                 continue
 
             # Convert the frame to JPEG format
-            _, jpeg = cv2.imencode('.jpg', annotated_img)
+            _, jpeg = cv2.imencode('.jpg', frames)
             frame_bytes = jpeg.tobytes()
 
             yield (b'--frame\r\n'

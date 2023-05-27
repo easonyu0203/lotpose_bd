@@ -1,5 +1,7 @@
 from typing import List
 
+import numpy as np
+
 from lotpose.frame_collector import FrameCollector
 from lotpose.dtos.frame_dto import FrameDto
 from lotpose.webcam_controller import WebcamController
@@ -8,6 +10,7 @@ from lotpose.webcam_controller import WebcamController
 class WebcamManager:
     _webcam_controllers: dict[int, WebcamController]
     _frame_collector: FrameCollector
+    _webcam_pair_RT: dict[tuple[int, int], tuple[np.array, np.array]]
 
     def __init__(self, device_indices: List[int], frame_collector: FrameCollector,
                  request_width: int,
@@ -30,4 +33,16 @@ class WebcamManager:
 
     def get_frames(self) -> dict[int, FrameDto]:
         """get batch of frames from each source"""
-        return self._frame_collector.get_frames(self._webcam_controllers)
+        batch_frames = self._frame_collector.get_frames(self._webcam_controllers)
+        return batch_frames
+
+    def __getitem__(self, index: int):
+        """get individual webcam controller"""
+        return self._webcam_controllers[index]
+
+    def set_calibrate_data(self, cam1_idx, cam2_idx, k1, d1, k2, d2, r, t):
+        self._webcam_pair_RT[(cam1_idx, cam2_idx)] = (r, t)
+        self._webcam_controllers[cam1_idx].mtx = k1
+        self._webcam_controllers[cam1_idx].dist = d1
+        self._webcam_controllers[cam2_idx].mtx = k2
+        self._webcam_controllers[cam2_idx].dist = d2

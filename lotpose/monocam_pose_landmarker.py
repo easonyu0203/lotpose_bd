@@ -37,8 +37,7 @@ class MonoCamPoseLandmarker:
             device_idx: PoseLandmarker.create_from_options(
                 PoseLandmarkerOptions(
                     base_options=BaseOptions(model_asset_path=pose_landmarker_path),
-                    running_mode=VisionRunningMode.LIVE_STREAM,
-                    result_callback=lambda r, img, ts: self._result_callback(device_idx, r, img, ts))
+                    running_mode=VisionRunningMode.VIDEO)
             )
             for device_idx in device_indices
         }
@@ -58,20 +57,11 @@ class MonoCamPoseLandmarker:
         # process images
         for device_idx in self._landmarkers.keys():
             img, ts = mp_images[device_idx]
-            self._landmarkers[device_idx].detect_async(img, ts)
+            result = self._landmarkers[device_idx].detect_for_video(img, ts)
+            annotated_img = cv2.cvtColor(draw_landmarks_on_image(img.numpy_view(), result), cv2.COLOR_RGB2BGR)
+            self._current_mono_results[device_idx] = MonoResultDto(device_idx, result, img, annotated_img, ts)
 
-        # wait for results
-        while True:
-            if len(self._current_mono_results) != len(self._landmarkers):
-                await asyncio.sleep(0.001)
-                continue
-
-            return self._current_mono_results
-
-    def _result_callback(self, idx: int, result: PoseLandmarkerResult, input_image: mp.Image, timestamp_ms: int):
-        annotated_img = draw_landmarks_on_image(input_image.numpy_view(), result)
-        annotated_img = cv2.cvtColor(annotated_img, cv2.COLOR_RGB2BGR)
-        self._current_mono_results[idx] = MonoResultDto(idx, result, input_image, annotated_img, timestamp_ms)
+        return self._current_mono_results
 
 
 # if __name__ == '__main__':

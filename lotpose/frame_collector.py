@@ -66,7 +66,7 @@ class FrameCollector:
             frames_sorted.sort(key=lambda f: f.timestamp)
 
             # check is in tolerant interval
-            time_diff = (frames_sorted[-1].timestamp - frames_sorted[0].timestamp) * 1000
+            time_diff = (frames_sorted[-1].timestamp - frames_sorted[0].timestamp)
 
             if time_diff <= self.tolerant_interval:
                 self._obsolete_threshold_time = time.time() + 1 / self.frame_rate
@@ -78,5 +78,5 @@ class FrameCollector:
                 raise TimeoutError("The loop has exceeded the maximum allowed duration.")
 
             # renew the oldest frame
-            oldest_frame = frames.pop(0)
+            oldest_frame = frames_sorted.pop(0)
             frames_sorted.append(frame_sources[oldest_frame.device_index].get_frame())
