@@ -82,7 +82,7 @@ async def get_stream(device_index: int):
                 continue
 
             # Convert the frame to JPEG format
-            _, jpeg = cv2.imencode('.jpg', frames)
+            _, jpeg = cv2.imencode('.jpg', annotated_img)
             frame_bytes = jpeg.tobytes()
 
             yield (b'--frame\r\n'

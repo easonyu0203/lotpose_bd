@@ -29,6 +29,7 @@ class AppState:
     current_mono_results: dict[int, MonoResultDto] = field(default=None, repr=False)
     is_camera_calibrated: bool = False
     is_camera_calibrating: bool = False
+    calibrate_progress: float = 0.0
 
 
 @dataclass
@@ -38,6 +39,7 @@ class AppStateDto:
     webcams_info: List[cv_utils.WebcamDeviceInfo] = None
     is_camera_calibrated: bool = False
     is_camera_calibrating: bool = False
+    calibrate_progress: float = 0.0
 
 
 class IAppManager(Protocol):
@@ -84,7 +86,8 @@ class AppManager(IAppManager):
             stared_device_indices=self._app_state.stared_device_indices,
             webcams_info=self._app_state.webcams_info,
             is_camera_calibrated=self._app_state.is_camera_calibrated,
-            is_camera_calibrating=self._app_state.is_camera_calibrating
+            is_camera_calibrating=self._app_state.is_camera_calibrating,
+            calibrate_progress=self._app_state.calibrate_progress
         )
         return dto
 
@@ -119,6 +122,7 @@ class AppManager(IAppManager):
             # mono camera pose estimation pass
             mono_results = await self.mono_landmarker.process_async(frames)
 
+            # set state
             self._app_state.current_frames = frames
             self._app_state.current_mono_results = mono_results
 
@@ -142,7 +146,7 @@ class AppManager(IAppManager):
         points_per_column = 6
         pattern_size = (points_per_row, points_per_column)
         calibrate_sample_size = 10
-        calibrate_progress = 0
+        self._app_state.calibrate_progress = 0
 
         # Prepare object points
         objp = np.zeros((points_per_row * points_per_column, 3), np.float32)
@@ -157,11 +161,12 @@ class AppManager(IAppManager):
 
         while self.webcam_manager is not None:
             # check if stop
+            self._app_state.calibrate_progress = sum(
+                min(len(v[0]), calibrate_sample_size) for v in calibrate_data.values()) / (
+                                                         len(camera_pairs) * calibrate_sample_size)
+
             if all(len(v[0]) >= calibrate_sample_size for v in calibrate_data.values()):
                 break
-
-            calibrate_progress = sum(min(len(v[0]), calibrate_sample_size) for v in calibrate_data.values()) / (
-                        len(camera_pairs) * calibrate_sample_size)
 
             # get frames
             frames = self.webcam_manager.get_frames()
@@ -191,8 +196,16 @@ class AppManager(IAppManager):
 
         # Perform stereo calibration and calculate the fundamental matrix
         for pair in camera_pairs:
+            ret, mtx1, dist1, _, _ = cv2.calibrateCamera(calibrate_data[pair][0], calibrate_data[pair][1],
+                                                         gray_frames[pair[0]].shape[::-1], None, None)
+            ret, mtx2, dist2, _, _ = cv2.calibrateCamera(calibrate_data[pair][0], calibrate_data[pair][2],
+                                                         gray_frames[pair[1]].shape[::-1], None, None)
+
+            stereocalibration_criteria = (cv2.TERM_CRITERIA_MAX_ITER + cv2.TERM_CRITERIA_EPS, 100, 1e-5)
+            stereocalibration_flags = cv2.CALIB_FIX_INTRINSIC
             ret, K1, D1, K2, D2, R, T, E, F = cv2.stereoCalibrate(
-                calibrate_data[pair][0], calibrate_data[pair][1], calibrate_data[pair][2],
+                calibrate_data[pair][0], calibrate_data[pair][1], calibrate_data[pair][2], mtx1, dist1, mtx2, dist2,
+                gray_frames[pair[0]].shape[::-1], criteria=stereocalibration_criteria, flags=stereocalibration_flags
             )
 
             # save calibration data
@@ -226,6 +239,8 @@ class AppManager(IAppManager):
         # stop pipeline
         if self.pipe_task is not None:
             self.pipe_task.cancel()
+
+
 
 
 AppManager.Singleton = AppManager()

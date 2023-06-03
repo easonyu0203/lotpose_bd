@@ -21,6 +21,8 @@ class WebcamManager:
 
         self._frame_collector = frame_collector
 
+        self._webcam_pair_RT = dict()
+
     def start_all(self):
         """start all webcams"""
         for webcam_ctr in self._webcam_controllers.values():
@@ -42,7 +44,7 @@ class WebcamManager:
 
     def set_calibrate_data(self, cam1_idx, cam2_idx, k1, d1, k2, d2, r, t):
         self._webcam_pair_RT[(cam1_idx, cam2_idx)] = (r, t)
-        self._webcam_controllers[cam1_idx].mtx = k1
-        self._webcam_controllers[cam1_idx].dist = d1
-        self._webcam_controllers[cam2_idx].mtx = k2
-        self._webcam_controllers[cam2_idx].dist = d2
+        self._webcam_controllers[cam1_idx].set_calibrate_data(k1, d1)
+        self._webcam_controllers[cam1_idx].set_calibrate_data(k2, d2)
+
+    # def to_other_camera_coordinate(self, from_cam_idx, to_cam_idx, norm_):
