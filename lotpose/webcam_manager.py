@@ -44,7 +44,28 @@ class WebcamManager:
 
     def set_calibrate_data(self, cam1_idx, cam2_idx, k1, d1, k2, d2, r, t):
         self._webcam_pair_RT[(cam1_idx, cam2_idx)] = (r, t)
+        self._webcam_pair_RT[(cam2_idx, cam1_idx)] = (np.transpose(r), -np.dot(np.transpose(r), t))
         self._webcam_controllers[cam1_idx].set_calibrate_data(k1, d1)
         self._webcam_controllers[cam1_idx].set_calibrate_data(k2, d2)
 
-    # def to_other_camera_coordinate(self, from_cam_idx, to_cam_idx, norm_):
+    def to_other_camera_coordinate(self, from_cam_idx, to_cam_idx, norm_u, norm_v):
+        """
+        convert a point from one camera coordinate to another camera coordinate
+        (u,v) is normalized coordinate [0, 1]
+        """
+        from_cam, to_cam = self._webcam_controllers[from_cam_idx], self._webcam_controllers[to_cam_idx]
+        r, t = self._webcam_pair_RT[(from_cam_idx, to_cam_idx)]
+
+        # normalize u, v to [-1, 1]
+        norm_u, norm_v = norm_u * 2 - 1, norm_v * 2 - 1
+
+        # get camera point of u, v
+        K_inv = np.linalg.inv(from_cam.new_mtx)
+        point_camera = K_inv @ np.array([norm_u, norm_v, 1])
+        camera_pos = np.array([0, 0, 0])
+
+        # transform point_camera, camera_pos to to_cam coordinate
+        point_camera = r @ point_camera.T + t.reshape(-1)
+        camera_pos = r @ camera_pos.T + t.reshape(-1)
+
+        return camera_pos, point_camera
