@@ -1,6 +1,7 @@
 import asyncio
 import time
 from typing import List
+import json
 
 import cv2
 from fastapi import FastAPI, BackgroundTasks
@@ -91,6 +92,23 @@ async def get_stream(device_index: int):
             await asyncio.sleep(0.016)
 
     return StreamingResponse(generate_frames(), media_type='multipart/x-mixed-replace; boundary=frame')
+
+
+@app.get("/stream-3d")
+async def stream_3d():
+    async def generate_3d_landmark():
+        while True:
+            if not AppManager.Singleton.get_app_state_dto().webcam_stared:
+                break
+
+            landmark_3d = AppManager.Singleton.get_landmark_3d()
+
+            json_data = json.dumps({"timestamp": landmark_3d.timestamp, "value": landmark_3d.value.tolist()})
+            yield json.dumps(json_data) + "\n"
+
+            await asyncio.sleep(0.016)
+
+    return StreamingResponse(generate_3d_landmark(), media_type="application/json")
 
 
 @app.on_event("shutdown")

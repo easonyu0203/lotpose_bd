@@ -6,10 +6,12 @@ from itertools import combinations
 import cv2
 import numpy as np
 
+from lotpose.dtos.landmark_3d_dto import Landmark3dDto
 from lotpose.dtos.mono_result_dto import MonoResultDto
 from lotpose.frame_collector import FrameCollector
 from lotpose.dtos.frame_dto import FrameDto
 from lotpose.monocam_pose_landmarker import MonoCamPoseLandmarker
+from lotpose.three_landmarker import ThreeLandmarker
 from lotpose.webcam_manager import WebcamManager
 from utils import cv_utils
 
@@ -27,6 +29,7 @@ class AppState:
     webcams_info: List[cv_utils.WebcamDeviceInfo] = None
     current_frames: dict[int, FrameDto] = field(default=None, repr=False)
     current_mono_results: dict[int, MonoResultDto] = field(default=None, repr=False)
+    current_3d_results: Optional[Landmark3dDto] = None
     is_camera_calibrated: bool = False
     is_camera_calibrating: bool = False
     calibrate_progress: float = 0.0
@@ -63,6 +66,9 @@ class IAppManager(Protocol):
     def get_mono_results(self) -> dict[int, MonoResultDto]:
         ...
 
+    def get_landmark_3d(self) -> Landmark3dDto:
+        ...
+
     def stop_webcams_n_pipeline(self) -> None:
         ...
 
@@ -73,6 +79,7 @@ class AppManager(IAppManager):
     _app_state: AppState
     webcam_manager: Optional[WebcamManager] = None
     mono_landmarker: MonoCamPoseLandmarker = None
+    three_landmarker: ThreeLandmarker = None
     pipe_task: asyncio.Task = None
 
     def __init__(self):
@@ -101,6 +108,7 @@ class AppManager(IAppManager):
         self.webcam_manager = WebcamManager(device_indices, frame_collector, request_width, request_height)
 
         self.mono_landmarker = MonoCamPoseLandmarker(device_indices)
+        self.three_landmarker = ThreeLandmarker()
 
         # start webcams
         self.webcam_manager.start_all()
@@ -122,9 +130,14 @@ class AppManager(IAppManager):
             # mono camera pose estimation pass
             mono_results = await self.mono_landmarker.process_async(frames)
 
+            #
+            landmarks_3d = self.three_landmarker.process(mono_results)
+
             # set state
             self._app_state.current_frames = frames
             self._app_state.current_mono_results = mono_results
+            if landmarks_3d is not None:
+                self._app_state.current_3d_results = landmarks_3d
 
             await asyncio.sleep(0.016)  # run 60 fps
 
@@ -229,6 +242,9 @@ class AppManager(IAppManager):
 
         return self._app_state.current_mono_results
 
+    def get_landmark_3d(self) -> Landmark3dDto:
+        return self._app_state.current_3d_results
+
     def stop_webcams_n_pipeline(self) -> None:
         """stop all webcams"""
         self.webcam_manager.stop_all()
@@ -239,8 +255,6 @@ class AppManager(IAppManager):
         # stop pipeline
         if self.pipe_task is not None:
             self.pipe_task.cancel()
-
-
 
 
 AppManager.Singleton = AppManager()

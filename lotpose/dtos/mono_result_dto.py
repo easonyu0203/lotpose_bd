@@ -13,3 +13,5 @@ class MonoResultDto:
     input_img: mp.Image
     annotated_img: np.array  # BGR image
     timestamp: int
+
+
