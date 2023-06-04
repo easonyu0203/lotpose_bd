@@ -18,7 +18,8 @@ class ThreeLandmarker:
             return None
         mono_landmark = mono_landmark[0]
 
-        landmark3d_value = np.array([[p.x, p.y, p.z, p.presence] for p in mono_landmark])
+        landmark3d_value = np.array([[p.x * 5, -p.y * 5, p.z * 5, p.presence] for p in mono_landmark])
+        landmark3d_value[:, :3] = landmark3d_value[:, :3] - landmark3d_value[0, :3] + np.array([0, 5, 0])
 
         landmark3d = Landmark3dDto(
             device_index=target.device_index,
