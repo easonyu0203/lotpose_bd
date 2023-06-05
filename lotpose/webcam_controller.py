@@ -44,8 +44,8 @@ class WebcamController:
         _, frame = self._capture.read()
 
         # undistort the frame
-        if self.is_calibrated:
-            frame = cv2.undistort(frame, self.mtx, self.dist, None, self.new_mtx)
+        # if self.is_calibrated:
+        #     frame = cv2.undistort(frame, self.mtx, self.dist, None, self.new_mtx)
 
         return FrameDto(self.device_index, frame)
 

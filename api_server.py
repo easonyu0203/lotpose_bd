@@ -79,7 +79,7 @@ async def get_stream(device_index: int):
             try:
                 annotated_img = mono_results[device_index].annotated_img
             except KeyError:
-                await asyncio.sleep(0.016)
+                await asyncio.sleep(0.032)
                 continue
 
             # Convert the frame to JPEG format
@@ -89,7 +89,7 @@ async def get_stream(device_index: int):
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-            await asyncio.sleep(0.032)
+            await asyncio.sleep(0.048)
 
     return StreamingResponse(generate_frames(), media_type='multipart/x-mixed-replace; boundary=frame')
 
@@ -106,7 +106,7 @@ async def stream_3d():
             json_data = json.dumps({"timestamp": landmark_3d.timestamp, "value": landmark_3d.value.tolist()})
             yield json.dumps(json_data) + "\n"
 
-            await asyncio.sleep(0.032)
+            await asyncio.sleep(0.048)
 
     return StreamingResponse(generate_3d_landmark(), media_type="application/json")
 

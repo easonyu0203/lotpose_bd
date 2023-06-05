@@ -12,7 +12,7 @@ class ThreeLandmarker:
     def process(self, mono_results: dict[int, MonoResultDto]) -> Optional[Landmark3dDto]:
         """process mono results and return 3d landmark"""
 
-        target = list(mono_results.values())[0]
+        target = mono_results[0]
         mono_landmark = target.result.pose_landmarks
         if mono_landmark is None or mono_landmark == []:
             return None

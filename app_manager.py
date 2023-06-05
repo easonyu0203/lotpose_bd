@@ -123,7 +123,7 @@ class AppManager(IAppManager):
             # skip if no new frames
             if old_frames is not None and min(f.timestamp for f in frames.values()) == min(
                     f.timestamp for f in old_frames.values()):
-                await asyncio.sleep(0.001)
+                await asyncio.sleep(0.016)
                 continue
             old_frames = frames
 
@@ -139,7 +139,7 @@ class AppManager(IAppManager):
             if landmarks_3d is not None:
                 self._app_state.current_3d_results = landmarks_3d
 
-            await asyncio.sleep(0.016)  # run 60 fps
+            await asyncio.sleep(0.048)  # run 60 fps
 
     async def start_calibration_bg_task(self) -> None:
         """calibrate cameras"""
